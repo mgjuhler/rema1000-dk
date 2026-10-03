@@ -65,22 +65,6 @@
     <text x="82" y="554"><tspan fill="#94a3b8">$ </tspan><tspan fill="#e2e8f0">▍</tspan></text>
   </g>
 
-  <!-- Shop front -->
-  <g>
-    <path d="M770 300 L1280 250 V600 H770 Z" fill="#0b1632"/>
-    <path d="M770 300 L1280 250 V286 L770 332 Z" fill="#13224a"/>
-    <g fill="url(#glass)" opacity=".92">
-      <path d="M800 352 L900 344 V560 H800 Z"/><path d="M912 343 L1012 335 V560 H912 Z"/><path d="M1024 334 L1124 326 V560 H1024 Z"/><path d="M1136 325 L1236 317 V560 H1136 Z"/>
-    </g>
-    <g stroke="#0b1632" stroke-width="5">
-      <path d="M850 348V560M962 339V560M1074 330V560M1186 321V560M800 450H1236"/>
-    </g>
-    <rect x="770" y="560" width="510" height="40" fill="#070d1f"/>
-    <g filter="url(#glowRed)">
-      <text x="800" y="312" font-size="38" font-weight="700" fill="#1d4ed8" stroke="#ff4d5a" stroke-width="2" paint-order="stroke" transform="rotate(-5.6 800 312)" letter-spacing="2">KØBMAND</text>
-    </g>
-  </g>
-
   <!-- Shopping list card -->
   <g filter="url(#glowBlue)">
     <rect x="724" y="392" width="268" height="214" rx="16" fill="url(#panel)" stroke="#38bdf8" stroke-width="2"/>
@@ -97,32 +81,50 @@
   </g>
   <text x="972" y="588" font-size="18" font-weight="800" fill="#e0f2fe" text-anchor="end">I alt 50,80 kr.</text>
 
-  <!-- The bear with a shopping basket -->
-  <g transform="translate(1150 470)">
-    <ellipse cx="0" cy="150" rx="120" ry="14" fill="none" stroke="#38bdf8" stroke-opacity=".7" stroke-width="2"/>
-    <ellipse cx="0" cy="150" rx="84" ry="9" fill="#38bdf8" opacity=".18"/>
-    <ellipse cx="0" cy="92" rx="62" ry="60" fill="#8b5a36"/>
-    <ellipse cx="0" cy="104" rx="38" ry="36" fill="#c9966b"/>
-    <ellipse cx="-34" cy="146" rx="22" ry="12" fill="#7a4d2c"/><ellipse cx="34" cy="146" rx="22" ry="12" fill="#7a4d2c"/>
-    <circle cx="-44" cy="-40" r="20" fill="#8b5a36"/><circle cx="-44" cy="-40" r="10" fill="#c9966b"/>
-    <circle cx="44" cy="-40" r="20" fill="#8b5a36"/><circle cx="44" cy="-40" r="10" fill="#c9966b"/>
-    <circle cx="0" cy="0" r="58" fill="#9a6640"/>
-    <ellipse cx="0" cy="18" rx="27" ry="20" fill="#d9b08c"/>
-    <ellipse cx="0" cy="9" rx="8.5" ry="6" fill="#2b1a10"/>
-    <path d="M0 15v7M0 22q-8 7-16 1M0 22q8 7 16 1" fill="none" stroke="#2b1a10" stroke-width="2.4" stroke-linecap="round"/>
-    <circle cx="-21" cy="-10" r="6" fill="#2b1a10"/><circle cx="21" cy="-10" r="6" fill="#2b1a10"/>
-    <circle cx="-19" cy="-12" r="2" fill="#fff"/><circle cx="23" cy="-12" r="2" fill="#fff"/>
-    <circle cx="-36" cy="12" r="8" fill="#e9a38a" opacity=".5"/><circle cx="36" cy="12" r="8" fill="#e9a38a" opacity=".5"/>
-    <!-- arm and basket -->
-    <path d="M-52 70 Q-92 76 -104 96" fill="none" stroke="#8b5a36" stroke-width="20" stroke-linecap="round"/>
-    <path d="M52 70 Q78 84 70 112" fill="none" stroke="#8b5a36" stroke-width="20" stroke-linecap="round"/>
-    <g transform="translate(-150 92)">
-      <path d="M10 0 Q40 -34 70 0" fill="none" stroke="#ff4d5a" stroke-width="5" stroke-linecap="round"/>
-      <path d="M0 0H80L70 46H10Z" fill="#1d4ed8" stroke="#93c5fd" stroke-width="2"/>
-      <path d="M8 14H72M12 30H68M26 2L30 44M40 2V44M54 2L50 44" stroke="#93c5fd" stroke-opacity=".7" stroke-width="1.6" fill="none"/>
-      <rect x="20" y="-16" width="16" height="22" rx="3" fill="#f8fafc"/><rect x="22" y="-10" width="12" height="6" fill="#38bdf8"/>
-      <circle cx="54" cy="-6" r="10" fill="#ef4444"/><path d="M54 -16q4 -6 9 -5" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- The robot: holds the list and waves -->
+  <g transform="translate(1118 380)">
+    <!-- hover ring -->
+    <ellipse cx="0" cy="232" rx="132" ry="16" fill="none" stroke="#38bdf8" stroke-opacity=".8" stroke-width="2"/>
+    <ellipse cx="0" cy="232" rx="92" ry="10" fill="#38bdf8" opacity=".2"/>
+    <ellipse cx="0" cy="232" rx="170" ry="24" fill="none" stroke="#38bdf8" stroke-opacity=".25" stroke-width="1.5"/>
+    <!-- legs -->
+    <rect x="-44" y="150" width="34" height="62" rx="15" fill="#c7d6ee"/><rect x="10" y="150" width="34" height="62" rx="15" fill="#c7d6ee"/>
+    <rect x="-52" y="196" width="50" height="26" rx="12" fill="#1d4ed8"/><rect x="2" y="196" width="50" height="26" rx="12" fill="#1d4ed8"/>
+    <!-- left arm, holding the list -->
+    <path d="M-66 64 Q-112 84 -128 116" fill="none" stroke="#c7d6ee" stroke-width="22" stroke-linecap="round"/>
+    <circle cx="-130" cy="120" r="16" fill="#e8eefb"/>
+    <!-- right arm, waving -->
+    <path d="M66 62 Q118 44 128 -6" fill="none" stroke="#c7d6ee" stroke-width="22" stroke-linecap="round"/>
+    <circle cx="130" cy="-14" r="17" fill="#e8eefb"/>
+    <g stroke="#e8eefb" stroke-width="9" stroke-linecap="round"><path d="M122 -26L114 -44"/><path d="M132 -30L134 -50"/><path d="M142 -24L154 -40"/></g>
+    <!-- body -->
+    <rect x="-70" y="38" width="140" height="128" rx="44" fill="#e8eefb"/>
+    <path d="M-70 96 Q0 118 70 96 V122 Q70 166 26 166 H-26 Q-70 166 -70 122 Z" fill="#1d4ed8"/>
+    <rect x="-30" y="62" width="60" height="44" rx="12" fill="#0b1632" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M-16 84h8l5-10 7 20 5-10h8" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="-44" cy="60" r="5" fill="#ff4d5a"/><circle cx="44" cy="60" r="5" fill="#38bdf8"/>
+    <!-- neck -->
+    <rect x="-18" y="22" width="36" height="22" rx="8" fill="#9fb3d6"/>
+    <!-- head -->
+    <path d="M0 -112V-134" stroke="#9fb3d6" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="0" cy="-140" r="9" fill="#ff4d5a"/><circle cx="0" cy="-140" r="16" fill="#ff4d5a" opacity=".25"/>
+    <rect x="-98" y="-112" width="196" height="142" rx="62" fill="#e8eefb"/>
+    <rect x="-112" y="-66" width="22" height="50" rx="10" fill="#1d4ed8"/><rect x="90" y="-66" width="22" height="50" rx="10" fill="#1d4ed8"/>
+    <rect x="-108" y="-52" width="8" height="22" rx="4" fill="#38bdf8"/><rect x="100" y="-52" width="8" height="22" rx="4" fill="#38bdf8"/>
+    <rect x="-78" y="-90" width="156" height="98" rx="44" fill="#070d1f"/>
+    <g filter="url(#glowBlue)">
+      <ellipse cx="-34" cy="-46" rx="15" ry="19" fill="#38bdf8"/><ellipse cx="34" cy="-46" rx="15" ry="19" fill="#38bdf8"/>
+      <path d="M-20 -14 Q0 2 20 -14" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
     </g>
+    <ellipse cx="-30" cy="-52" rx="5" ry="6" fill="#e0f2fe"/><ellipse cx="38" cy="-52" rx="5" ry="6" fill="#e0f2fe"/>
+    <path d="M-64 -78 Q-20 -98 30 -92" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <!-- Speech bubble -->
+  <g transform="translate(738 268)">
+    <path d="M0 14a14 14 0 0 1 14-14h206a14 14 0 0 1 14 14v22l26 12-26 6v12a14 14 0 0 1-14 14H14a14 14 0 0 1-14-14z" fill="#0c1a3d" stroke="#38bdf8" stroke-width="2"/>
+    <text x="117" y="34" font-size="19" fill="#e0f2fe" text-anchor="middle">Hvad mangler vi?</text>
+    <text x="117" y="60" font-size="19" fill="#7dd3fc" text-anchor="middle">JSON ind, JSON ud.</text>
   </g>
 
   <!-- Bottom bar -->

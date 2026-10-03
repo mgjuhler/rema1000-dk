@@ -18,7 +18,8 @@ Med klienten kan du fra et script eller en terminal:
 - hente REMAs forslag til varer, du ofte køber
 - hente hele varekataloget med priser (offentligt, kræver ikke login)
 
-Selve HTTP-API'et er beskrevet i [API.md](API.md).
+Selve HTTP-API'et er beskrevet i [API.md](API.md), og en kortlægning af alt, hvad appen
+kalder (ca. 125 kald: konto, indkøb, varer, butikker, levering), ligger i [`docs/api/`](docs/api/).
 
 ## Vigtigt at vide
 

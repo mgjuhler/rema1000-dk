@@ -14,6 +14,34 @@ forkortet til de felter, vi har brugt. Rigtige svar indeholder flere felter.
 
 Den norske REMA-app bruger en anden backend (`api.rema.no`); intet her gælder for den.
 
+## Hele API'et
+
+Denne fil beskriver de kald, klienten bruger, og som er afprøvet med login. Appen kan
+langt mere. En samlet kortlægning af alt, hvad Android-appen (6.9.0) kalder, ligger i
+`docs/api/`, delt i tre dokumenter:
+
+| Dokument | Indhold | Kald | Afprøvet |
+|---|---|---|---|
+| [Konto og login](docs/api/konto-og-login.md) | OAuth, MitID, profil, adresser, samtykker, nyhedsbreve, push, feature-flag | 39 | 9 |
+| [Indkøb og varer](docs/api/indkoeb-og-varer.md) | Indkøbslister, deling, favoritter, katalog, varesøgning, tilbud, tilbudsavis, opskrifter | 43 | 23 |
+| [Butikker og levering](docs/api/butikker-og-levering.md) | Butikker og åbningstider, levering ("Vigo"), ordrer, Scan Selv, betaling, bedømmelser | 44 | 4 |
+
+Hvert kald er mærket **Afprøvet** (kaldt mod det rigtige API) eller **Set i appens kode**
+(læst ud af appen, ikke kaldt). Under kortlægningen blev der kun lavet læsende kald uden
+login; alt, der kræver login eller ændrer noget, er derfor kun set i koden, medmindre det
+står i denne fil. Hvert dokument slutter med et afsnit om det, der er uafklaret.
+
+Værd at vide fra kortlægningen:
+
+- **Varesøgning er åben:** `GET search/products?query=…` kræver ikke login og giver varer
+  med afdeling, kategori og stregkoder. `GET v3/products?filter[is_advertised]=true` giver
+  ugens tilbudsvarer.
+- **Lister oprettes, omdøbes og slettes** gennem samme synk-kald som varerne
+  (set i appens kode, ikke afprøvet).
+- **Levering med Vigo er slået fra** i appens feature-flag, så en stor del af ordre- og
+  leveringskaldene er sandsynligvis ude af drift.
+- **`@PATCH`, ikke `PUT`:** de opdaterende kald i appen er PATCH.
+
 ## Oversigt
 
 | Metode | Sti | Login | Formål |
