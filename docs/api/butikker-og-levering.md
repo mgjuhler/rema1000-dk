@@ -14,6 +14,10 @@ alt kan ændre sig uden varsel.
 > bestilling, levering, indkøbere ("shoppere"), kørebog og udbetaling herunder er beskrevet,
 > som det står i appens kode, men er efter alt at dømme ude af drift. Butikker, åbningstider,
 > adresseopslag og Scan Selv hører ikke under Vigo.
+>
+> Klienten i dette repo har derfor kun metoder til butikker og adresseopslag (nr. 1, 2, 5 og 6 i
+> oversigten). Resten er udeladt — se listen sidst i [metoder.md](metoder.md) — men kan stadig nås
+> med kommandoen `api`. Scan Selv-kurvene er udeladt, fordi de i API'et kun findes inde i et job.
 
 ## Statusmarkører
 
@@ -225,7 +229,8 @@ bevist, slutning.
 Svar: `{"data": [butik, ...], "meta": {...}}` med butikker som i 1.1. Hvad
 forslagene bygger på (adresse, tidligere køb), fremgår ikke af appen.
 
-Et særskilt endpoint for *favoritbutik* er ikke fundet i dette område; se "Uafklaret".
+Favoritbutikken gemmes ikke her, men på profilen: feltet `favorite_meta_store` i `POST v1/user`
+(se dokumentet om konto og login).
 
 ### 1.4 `GET v3/stores/{store_id}/time-slots` — afhentningstider
 
@@ -1022,9 +1027,8 @@ En tur i svarene har felterne `id`, `job_id`, `trip_type`, `address_from`,
 3. **`user_orderer`.** Kaldes kun i forbindelse med bekræftelse af betaling.
    Hvad det gør på serveren, og om det har noget med en rolle at gøre, er ukendt.
 4. **`limited=1` på `v1/jobs-v2` og `single` i `v1/job/sync`.** Betydningen fremgår ikke.
-5. **Favoritbutik.** Der er ikke fundet et endpoint til at gemme en foretrukken
-   butik i dette område. Enten ligger valget kun i appen, eller også sættes det
-   via brugeropdateringen (konto-området).
+5. **Favoritbutik.** Sættes med `favorite_meta_store` i `POST v1/user` (konto-området); kaldet er
+   kun set i appens kode, så det er ikke bekræftet, at værdien er butikkens `id` fra `v3/stores`.
 6. **Hvordan en Scan Selv-kurv opstår** for en almindelig kunde uden
    leveringsordre – altså hvordan jobbet bag kurven oprettes. Appen har intet
    særskilt "opret kurv"-kald; formentlig sker det via 2.4 eller 4.2, men det er ikke eftervist.

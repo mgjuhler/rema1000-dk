@@ -151,8 +151,8 @@ Fornyer tokens. Refresh-tokenet roterer: det gamle kan ikke bruges igen, og det 
 gemmes.
 
 Body (JSON): `client_id` (string), `refresh_token` (string), `grant_type` (string).
-Bemærk: appen sender `grant_type` = `authorization_code` også her — ikke `refresh_token`.
-Om serveren kræver netop den værdi, er ikke undersøgt i denne kortlægning.
+Bemærk: appen sender `grant_type` = `authorization_code` også her. Klienten i dette repo sender
+`refresh_token`, og det er den form, der er afprøvet (se `API.md`).
 
 Svar: samme `tokens`-objekt som `oauth2/token`.
 
@@ -196,7 +196,7 @@ Query-parametre:
 | `redirect_uri` | string | `dk.rema1000.vigo://apps/rema1000/user/identity/verified` |
 | `failed_uri` | string | `dk.rema1000.vigo://apps/rema1000/user/identity/failed` |
 | `cancelled_uri` | string | `dk.rema1000.vigo://apps/rema1000/user/identity/cancelled` |
-| `resume_uri` | string | ikke fastslået (se Uafklaret) |
+| `resume_uri` | string | `https://shop.rema1000.dk/apps/rema1000/user/resume` |
 
 URL-skemaet `dk.rema1000.vigo` står i appens ressourcer og er det samme som i login-redirectet.
 
@@ -614,7 +614,7 @@ til Vigo, men ligger under `v3/users/{user_id}`. Alle: set i appens kode.
 Rute: `id` (int), `transport_type` (enum), `trips` (liste). Tur: `id` (int), `job_id`
 (int), `address_from` (string), `address_to` (string), `distance` (int), `note` (string),
 `trip_type` (appens værdier: `SHOPPER_TO_SHOP`, `SHOP_TO_CUSTOMER`, `CUSTOMER_TO_SHOP`,
-`CUSTOMER_TO_SHOPPER`, `CUSTOMER_TO_CUSTOMER`, `NO_ORIGIN`).
+`CUSTOMER_TO_SHOPPER`, `CUSTOMER_TO_CUSTOMER`, `NO_ORIGIN`, `NO_DESTINATION`).
 
 ---
 
@@ -651,25 +651,24 @@ Disse ting blev eftersøgt, men findes ikke som endpoints i app-version 6.9.0:
 
 ## Uafklaret
 
-1. **`resume_uri`** i `identity-verification/token`: værdien, appen sender, er ikke fundet.
-2. **MitID-udfald**: hvordan "allerede i brug", "under alder" m.fl. signaleres (query på
+1. **MitID-udfald**: hvordan "allerede i brug", "under alder" m.fl. signaleres (query på
    retur-URI, eller felter på profilen) er ikke kortlagt.
-3. **Enum-stavemåder i JSON** (`transport_method`, `type` på v3-brugeren,
+2. **Enum-stavemåder i JSON** (`transport_method`, `type` på v3-brugeren,
    `transport_type`, `trip_type`): appens interne navne er kendt, men `v1/campaigns`
    viste, at serverens værdier kan afvige (små bogstaver, andre navne), så
    stavemåden skal bekræftes med et rigtigt svar.
-4. **`grant_type` ved refresh**: appen sender `authorization_code`; om `refresh_token`
-   også accepteres, er ikke undersøgt her.
-5. **Logout**: om `v1/oauth/logout` tilbagekalder tokens eller kun afmelder push.
-6. **`v1/user/photo`**: billedets kodning (antaget base64-JPEG) og evt. størrelsesgrænse.
-7. **`v1/push/register`**: svarfeltets præcise navn (`pushId` antaget).
-8. **`v1/user/gdpr-export`**: leveringsform og om der er begrænsning på hyppighed.
-9. **`v1/user/delete`**: om sletning sker straks eller efter en fortrydelsesperiode.
-10. **`v3/banks`**: 405 uden login — uvist om endpointet stadig er aktivt, nu hvor Vigo
+3. **`grant_type` ved refresh**: `refresh_token` virker (afprøvet); om appens egen værdi
+   `authorization_code` også accepteres, er ikke undersøgt.
+4. **Logout**: om `v1/oauth/logout` tilbagekalder tokens eller kun afmelder push.
+5. **`v1/user/photo`**: billedets kodning (antaget base64-JPEG) og evt. størrelsesgrænse.
+6. **`v1/push/register`**: svarfeltets præcise navn (`pushId` antaget).
+7. **`v1/user/gdpr-export`**: leveringsform og om der er begrænsning på hyppighed.
+8. **`v1/user/delete`**: om sletning sker straks eller efter en fortrydelsesperiode.
+9. **`v3/banks`**: 405 uden login — uvist om endpointet stadig er aktivt, nu hvor Vigo
     er slået fra. Det samme gælder bankkonto- og kørebogs-endpoints.
-11. **`accepted_version`** i `v3/policies`: formen er kun kendt fra appens model.
-12. **Svarkoder og fejlformater** for alle "Set i appens kode"-endpoints (valideringsfejl,
+10. **`accepted_version`** i `v3/policies`: formen er kun kendt fra appens model.
+11. **Svarkoder og fejlformater** for alle "Set i appens kode"-endpoints (valideringsfejl,
     403 ved forkert `user_id` osv.) er ikke observeret.
-13. **Token-levetid**: `expires_in` er ikke målt i denne kortlægning.
-14. **Flere felter**: serveren kan returnere felter, appen ikke læser (som set i
+12. **Token-levetid**: `expires_in` er ikke målt i denne kortlægning.
+13. **Flere felter**: serveren kan returnere felter, appen ikke læser (som set i
     `v1/settings`); tabellerne for ikke-afprøvede endpoints er derfor minimumslister.

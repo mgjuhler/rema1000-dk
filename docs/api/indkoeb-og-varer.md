@@ -4,7 +4,8 @@ Kortlægning af den del af REMA 1000-appens backend, der handler om det, der ryg
 indkøbslister, favoritter, varer, katalog, søgning, tilbud, tilbudsavis, forsideindhold og opskrifter.
 
 Kilde: Android-appen `dk.iroots.rema1000` version 6.9.0 (dekompileret) samt enkelte kald uden login
-mod de åbne endpoints den 2026-10-03. Dokumentet er uofficielt, og API'et kan ændre sig uden varsel.
+mod de åbne endpoints den 2026-10-03. Oprettelse, omdøbning og sletning af lister er afprøvet med
+login samme dag, og Tjeks læsende kald er afprøvet med appens nøgle. Dokumentet er uofficielt, og API'et kan ændre sig uden varsel.
 
 ## Sådan læses dokumentet
 
@@ -23,7 +24,7 @@ Eksempler bruger opdigtede værdier.
 |---|---|---|
 | `https://api.digital.rema1000.dk/api/` | Alt under `v1/`, `v2/`, `v3/` samt `search/` | Afhænger af endpoint |
 | `https://api.digital.rema1000.dk/api/rema1000dk/` | CMS-indhold: `entities`, `featured-recipes` | Nej |
-| `https://squid-api.tjek.com` | Tilbudsavisen (Tjek, tidligere eTilbudsavis) | API-nøgle i header |
+| `https://squid-api.tjek.com` | Tilbudsavisen (Tjek, tidligere eTilbudsavis) | API-nøgle i headeren `x-api-key` |
 | `https://publication-viewer.tjek.com` | Webvisning af tilbudsavisen | API-nøgle i URL |
 
 Appen sender disse headere på alle kald til REMA's API: `Accept: application/json`,
@@ -83,10 +84,10 @@ er **PATCH** (ikke PUT). PUT findes som annotation, men bruges ikke på nogen en
 | 31 | POST | `v3/users/{user_id}/newsletter-subscriptions` | Tilmeld nyhedsbrev (grænseområde) | Ja | Set i appens kode |
 | 32 | DELETE | `v3/users/{user_id}/newsletter-subscriptions/{id}` | Afmeld nyhedsbrev (grænseområde) | Ja | Set i appens kode |
 | 33 | GET | `v1/settings` | Globale app-indstillinger (grænseområde) | Nej | Afprøvet |
-| 34 | GET | Tjek: `/v2/catalogs` | Aktive tilbudsaviser | API-nøgle | Set i appens kode |
-| 35 | GET | Tjek: `/v2/offers/{offer_id}` | Ét tilbud fra avisen | API-nøgle | Set i appens kode |
+| 34 | GET | Tjek: `/v2/catalogs` | Aktive tilbudsaviser | API-nøgle | Afprøvet |
+| 35 | GET | Tjek: `/v2/offers/{offer_id}` | Ét tilbud fra avisen | API-nøgle | Afprøvet |
 | 36 | POST | Tjek: `/v4/rpc/get_offer_products` | Varerne bag et tilbud | API-nøgle | Set i appens kode |
-| 37 | GET | Tjek-viewer: `/v1/embeds/{publication_id}` | Webvisning af avisen (ikke et API) | API-nøgle | Set i appens kode |
+| 37 | GET | Tjek-viewer: `/v1/embeds/{publication_id}` | Webvisning af avisen (ikke et API) | API-nøgle | Afprøvet |
 | 38 | GET | `rema1000dk/entities` | CMS-indhold: forside, opskrifter, opskrifts-tags | Nej | Afprøvet |
 | 39 | GET | `rema1000dk/featured-recipes` | Opskrifter i en fremhævet gruppe | Nej | Afprøvet (kun fejlsvar uden parameter) |
 | 40 | GET | `search/recipes` | Opskriftssøgning | Nej | Afprøvet |
@@ -94,7 +95,8 @@ er **PATCH** (ikke PUT). PUT findes som annotation, men bruges ikke på nogen en
 | 42 | POST | `v3/users/{user_id}/favorite-recipes` | Tilføj favoritopskrift | Ja | Set i appens kode |
 | 43 | DELETE | `v3/users/{user_id}/favorite-recipes/{recipe_id}` | Fjern favoritopskrift | Ja | Set i appens kode |
 
-43 endpoints: 23 afprøvet, 20 kun set i appens kode.
+43 endpoints: 26 afprøvet, 17 kun set i appens kode. Hvilken metode i klienten der laver hvilket kald,
+står i [metoder.md](metoder.md).
 
 ---
 
@@ -187,14 +189,16 @@ kun dem, der er ændret siden `unixtime`, er ikke afklaret (se "Uafklaret").
     }
   ],
   "unixtime": 1700000000,
-  "wait": 5000,
+  "wait": 60000,
   "settings": {}
 }
 ```
 
 ### 2. `POST v1/sync/shoppinglists-v2` — Afprøvet
 
-Sender lokale ændringer. Svaret har samme form som polling-svaret.
+Sender lokale ændringer. Svaret er altid HTTP 200 og har samme form som polling-svaret: `response`
+rummer **alle** brugerens lister efter ændringen, og dertil kommer `wait` (60000 ved afprøvningen),
+`unixtime` og `settings`.
 
 Body:
 
@@ -219,8 +223,8 @@ Liste-ændring:
 | Felt | Type | Beskrivelse |
 |---|---|---|
 | `id` | heltal | Serverens liste-id. Bruges, når listen findes på serveren. |
-| `offlineId` | tekst (UUID) | Bruges i stedet for `id`, når listen er ny. Klienten vælger selv værdien. |
-| `name` | tekst | Listens navn. Appen sender det altid med; et ændret navn er en omdøbning. |
+| `offlineId` | tekst (UUID) | Bruges i stedet for `id`, når listen er ny. Klienten vælger selv værdien. Serveren gentager den på listen i svaret på netop det kald. |
+| `name` | tekst | Listens navn. Appen sender det altid med; et ændret navn er en omdøbning. Kan udelades ved sletning. |
 | `deleted` | bool | `true` sletter listen. |
 | `items` | liste | Kun de linjer, der er nye eller ændrede. |
 
@@ -237,18 +241,37 @@ Linje-ændring:
 | `store_id`, `store_item_id` | heltal | Sendes for nye linjer, og når linjens vare er ændret. |
 | `deleted` | bool | `true` fjerner linjen; de øvrige felter udelades så. |
 
-De tre grundoperationer, som er afprøvet:
+Operationer på linjer, som er afprøvet:
 
 - Ny linje: `{offlineId, name, source, amount, bought: false, store_id: 1, store_item_id}`
 - Ændret antal: `{id, source, amount}`
 - Fjern linje: `{id, source, deleted: true}`
 
+En ny linje får et `id` i svaret; `amount` kommer tilbage som tekst (`"1"`), `unit` som `""`, og
+`total_price` er udfyldt. `offlineId` gentages på nye linjer i svaret på det kald, der oprettede dem.
+
+Operationer på lister, som er afprøvet (med login, 2026-10-03):
+
+- **Opret liste**: `{"offlineId": "<uuid4>", "name": "Min liste"}` uden `id`. Ændringen må have
+  `items` med i samme kald. Den nye liste kommer tilbage med et `id` fra serveren, en delekode
+  `code` på 8 tegn, `active: true`, `primary: false`, `approved: false`, `bags: 1`,
+  `warning: null`, `items: []` og `members` med kun opretteren (`is_self: true`; et medlem har
+  nøglerne `approved`, `email`, `id`, `is_self`, `name`, `photo`). Listen findes i svaret ved at
+  sammenligne `offlineId`; polling-endpointet returnerer aldrig `offlineId`.
+- **Omdøb liste**: `{"id": 1234567, "name": "Nyt navn"}`. `id`, `code`, linjer og medlemmer er
+  uændrede.
+- **Slet liste**: `{"id": 1234567, "deleted": true}` (`name` kan udelades). Listen forsvinder helt
+  og med det samme, med alle sine linjer, både fra sync-svaret og fra polling. Der er ingen
+  "slettet"-markering bagefter: `polling?unixtime=<før sletningen>` svarede `response: null`.
+
+**En ændring på et liste-id, brugeren ikke ejer, ignoreres uden fejl:** HTTP 200, ingen
+`error_code`, listerne er uændrede. En klient må derfor selv kontrollere svaret (klienten i dette
+repo kaster en fejl, hvis omdøbningen eller sletningen ikke kan ses i svaret).
+
 Udledt af appens kode, ikke afprøvet:
 
-- **Opret liste**: en ændring med `offlineId` og `name` (uden `id`).
-- **Omdøb liste**: en ændring med `id` og nyt `name`.
-- **Slet liste**: en ændring med `id` og `deleted: true`. Det er også sådan, man forlader en
-  delt liste i appen, så vidt koden viser — der er ikke fundet et særskilt "forlad liste"-endpoint.
+- **Forlad en delt liste**: så vidt koden viser, sker det med samme slette-ændring — der er ikke
+  fundet et særskilt "forlad liste"-endpoint.
 - **Kryds af**: `{id, source, bought: true}`.
 
 Værdier for `source` set i appen: `android_newspaper`, `android_newspaper_list`,
@@ -656,24 +679,56 @@ med i polling-svaret. Hører primært til konto-området.
 
 Den ugentlige avis leveres ikke af REMA's eget API, men af Tjek (tidligere eTilbudsavis/ShopGun).
 Appen taler med `https://squid-api.tjek.com` og sender en API-nøgle i headeren `x-api-key`
-sammen med `content-type: application/json; charset=utf-8`. Nøglen ligger i appen og gengives
-ikke her. Ingen af Tjek-kaldene er afprøvet i denne kortlægning.
+sammen med `content-type: application/json; charset=utf-8`.
 
-### 34. `GET /v2/catalogs?dealer_id={id}` — Set i appens kode
+### Værdierne, appen sender
+
+Appen har fire Tjek-værdier indbygget. De står som navngivne konstanter i `rema1000.py`:
+
+| Konstant | Hvad | Bruges til |
+|---|---|---|
+| `TJEK_API_KEY` | API-nøgle (32 hex-tegn) fra appens konfiguration | Headeren `x-api-key` på alle kald til `squid-api.tjek.com` og `api_key` i webvisningens URL |
+| `TJEK_DEALER_ID` | REMA 1000's forhandler-id hos Tjek (`11deC`) | `dealer_id` i `/v2/catalogs` |
+| `TJEK_BUSINESS_ID` | Samme id; Tjeks nyere API kalder en forhandler "business" | — |
+| `TJEK_TRACK_ID` | Tekstressourcen `tjek_track_id` i appen | Ingen af appens kald sender den, så vidt koden viser; den er med for fuldstændighedens skyld |
+
+Det er klientværdier: de ligger i hver eneste installeret kopi af appen, og samme slags nøgle står i
+enhver webside, der indlejrer en Tjek-avis. De identificerer REMA-appen over for Tjek, er ikke
+knyttet til en bruger og giver kun adgang til de offentliggjorte aviser. Derfor er de med i
+klienten, så avisen kan hentes uden selv at pille appen fra hinanden.
+
+De læsende kald er afprøvet med appens nøgle den 2026-10-03 (fem kald i alt). `POST`-kaldet
+(endpoint 36) er ikke afprøvet.
+
+### 34. `GET /v2/catalogs?dealer_id={id}` — Afprøvet
 
 Aktive aviser for en forhandler. Appen sender REMA 1000's forhandler-id hos Tjek (`11deC`).
+Svaret er en rå liste. Ved afprøvningen kom der fire aviser: ugens avis, forrige uges, et indstik
+og en sæsonavis — altså både gældende og netop udløbne/kommende.
 
-Felter pr. avis (fra appens model): `id`, `label`, `run_from`, `run_till`, `page_count`,
+Felter pr. avis, som appens model læser: `id`, `label`, `run_from`, `run_till`, `page_count`,
 `offer_count`, `dealer_id`, `store_id`, `all_stores`, `types`, `dimensions{width, height}`,
 `images{thumb, view, zoom}`, `branding{name, color, logo, website, description}`.
+Set i svaret derudover: `background`, `category_ids`, `dealer`, `dealer_url`, `display_run_till`,
+`ern`, `incito_publication_id`, `pages`, `pdf_url`, `publish`, `store_url`, `tags`.
 
-### 35. `GET /v2/offers/{offer_id}` — Set i appens kode
+```json
+[{"id": "abc123XY", "label": "Uge 1", "run_from": "2030-01-01T23:00:00+0000",
+  "run_till": "2030-01-08T22:59:59+0000", "page_count": 28, "offer_count": 120, "dealer_id": "11deC"}]
+```
+
+### 35. `GET /v2/offers/{offer_id}` — Afprøvet
 
 Ét tilbud fra avisen. Felter: `id`, `heading`, `description`, `catalog_id`, `catalog_page`,
 `catalog_view_id`, `dealer_id`, `store_id`, `run_from`, `run_till`, `publish`,
 `pricing{price, pre_price, currency}`,
 `quantity{pieces{from, to}, size{from, to}, unit{symbol, si{symbol, factor}}}`,
 `images{thumb, view, zoom}`, `links{webshop}`, `branding`.
+
+```json
+{"id": "offerEXAMPLE", "heading": "Eksempelvare", "catalog_id": "abc123XY", "catalog_page": 3,
+ "pricing": {"price": 25, "pre_price": null, "currency": "DKK"}}
+```
 
 ### 36. `POST /v4/rpc/get_offer_products` — Set i appens kode
 
@@ -685,7 +740,7 @@ det op som **REMA-vare-id** i sit lokale katalog — det er broen fra avisen til
 lægges på indkøbslisten (med `source` `android_newspaper` eller `android_newspaper_list`).
 Tilbud uden `external_id` vises kun med navn.
 
-### 37. Webvisning af avisen — Set i appens kode
+### 37. Webvisning af avisen — Afprøvet
 
 Selve bladringen sker i en webvisning, ikke via et API:
 
@@ -693,7 +748,20 @@ Selve bladringen sker i en webvisning, ikke via et API:
 https://publication-viewer.tjek.com/v1/embeds/<publication_id>?enable_zoom=true&api_key=<nøgle>&context=webview&view_direction=horizontal&view_mode=paged&ui=regular
 ```
 
-`publication_id` er avisens `id` fra endpoint 34.
+`publication_id` er avisens `id` fra endpoint 34. Adressen svarede med en HTML-side (ca. 55 kB).
+Klienten bygger adressen med `newspaper_viewer_url()`.
+
+### To Tjek-kald mere, som appen ikke bruger — Afprøvet
+
+Tjeks API har flere kald end dem, appen bruger. To af dem er nyttige og virker med samme nøgle:
+
+- `GET /v2/catalogs/{catalog_id}/pages` — avisens sider som billeder: en liste med ét element pr.
+  side, hvert med `thumb`, `view` og `zoom` (billed-URL'er i tre størrelser).
+- `GET /v2/offers?catalog_id={catalog_id}&limit={n}&offset={n}` — tilbuddene i en avis, samme
+  felter som endpoint 35. Det er vejen til tilbuds-id'er uden webvisningen. Kun afprøvet med
+  `limit=2`; klienten beder som standard om 100 ad gangen, og om Tjek tillader flere, er ikke undersøgt.
+
+De tæller ikke med i oversigten ovenfor, fordi de ikke er en del af appen.
 
 ---
 
@@ -834,12 +902,14 @@ Kræver login.
 
 - **Polling: fuldt svar eller ændringer?** Det er ikke fastslået, om `polling` med et nyere
   `unixtime` returnerer alle lister eller kun de ændrede, og om serveren holder forbindelsen åben
-  (ægte long-poll) eller svarer med det samme. Enheden for `wait` er udledt af appens kode
-  (millisekunder), ikke af dokumentation.
+  (ægte long-poll) eller svarer med det samme. Ét kald med et nyere `unixtime` svarede
+  `response: null`, hvilket tyder på, at kun ændringer sendes, men det er ikke undersøgt nærmere.
+  Enheden for `wait` er udledt af appens kode (millisekunder), ikke af dokumentation.
 - **`warning` og `bags`** på en liste samt `unit` og `total_price` på en linje læses ikke af
   appen; betydningen af de to første er ukendt.
-- **Opret, omdøb, slet og afkrydsning via sync** er udledt af appens kode og ikke afprøvet. Det
-  samme gælder, hvordan serveren svarer på en ny liste (hvordan `offlineId` kobles til det nye `id`).
+- **Afkrydsning via sync** (`bought: true`) er udledt af appens kode og ikke afprøvet. Ved lister
+  er disse ting ikke afprøvet: sletning af en delt eller primær liste, samme `offlineId` sendt to
+  gange, og hvilke navne serveren accepterer.
 - **Invitationer**: hvad `v1/shoppinglist/{id}/invite` præcis udløser (mail?), hvordan en
   modtager accepterer via API'et, hvordan `approved` skifter, og om et medlem kan fjernes af
   listens ejer. Invitationslinkets format er kun set i koden.
@@ -862,8 +932,8 @@ Kræver login.
 - **`v1/user/campaigns`**: forskellen fra `v1/campaigns` i praksis er ikke set. Skrivemåden for
   `type`- og `codename`-værdierne i appen er udledt af enum-navne og passer ikke helt med den
   ene værdi, der er set i et rigtigt svar.
-- **Tjek-API'et** er ikke afprøvet; feltlisterne er appens modeller. Det er ikke undersøgt, om
-  nøglen er bundet til appen, eller hvilke vilkår Tjek har for brug.
+- **Tjek-API'et**: `get_offer_products` er ikke afprøvet (det er et POST-kald). Det er ikke
+  undersøgt, hvilke vilkår Tjek har for brug af nøglen, eller om Tjek begrænser antal kald.
 - **`featured-recipes`**: et vellykket kald mangler; hvilken id der præcis skal bruges som
   `group_id`, er udledt af koden.
 - **`recipeMultiTagGroup`** og de øvrige infoboks-varianter er kun set som typenavne.

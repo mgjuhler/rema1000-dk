@@ -16,14 +16,14 @@ Den norske REMA-app bruger en anden backend (`api.rema.no`); intet her gælder f
 
 ## Hele API'et
 
-Denne fil beskriver de kald, klienten bruger, og som er afprøvet med login. Appen kan
-langt mere. En samlet kortlægning af alt, hvad Android-appen (6.9.0) kalder, ligger i
+Denne fil beskriver de kald, der er afprøvet med login, samt de vigtigste åbne kald. Appen
+kan langt mere. En samlet kortlægning af alt, hvad Android-appen (6.9.0) kalder, ligger i
 `docs/api/`, delt i tre dokumenter:
 
 | Dokument | Indhold | Kald | Afprøvet |
 |---|---|---|---|
 | [Konto og login](docs/api/konto-og-login.md) | OAuth, MitID, profil, adresser, samtykker, nyhedsbreve, push, feature-flag | 39 | 9 |
-| [Indkøb og varer](docs/api/indkoeb-og-varer.md) | Indkøbslister, deling, favoritter, katalog, varesøgning, tilbud, tilbudsavis, opskrifter | 43 | 23 |
+| [Indkøb og varer](docs/api/indkoeb-og-varer.md) | Indkøbslister, deling, favoritter, katalog, varesøgning, tilbud, tilbudsavis, opskrifter | 43 | 26 |
 | [Butikker og levering](docs/api/butikker-og-levering.md) | Butikker og åbningstider, levering ("Vigo"), ordrer, Scan Selv, betaling, bedømmelser | 44 | 4 |
 
 Hvert kald er mærket **Afprøvet** (kaldt mod det rigtige API) eller **Set i appens kode**
@@ -31,17 +31,22 @@ Hvert kald er mærket **Afprøvet** (kaldt mod det rigtige API) eller **Set i ap
 login; alt, der kræver login eller ændrer noget, er derfor kun set i koden, medmindre det
 står i denne fil. Hvert dokument slutter med et afsnit om det, der er uafklaret.
 
+[`docs/api/metoder.md`](docs/api/metoder.md) viser, hvilken metode i klienten der laver
+hvilket kald, og hvilke kald klienten udelader, fordi Vigo er lukket.
+
 Værd at vide fra kortlægningen:
 
 - **Varesøgning er åben:** `GET search/products?query=…` kræver ikke login og giver varer
   med afdeling, kategori og stregkoder. `GET v3/products?filter[is_advertised]=true` giver
   ugens tilbudsvarer.
 - **Lister oprettes, omdøbes og slettes** gennem samme synk-kald som varerne
-  (set i appens kode, ikke afprøvet).
+  (afprøvet, se [Opret, omdøb og slet en liste](#opret-omdøb-og-slet-en-liste)).
+- **Tilbudsavisen kommer fra Tjek**, ikke fra REMAs eget API (se [Tilbudsavisen](#tilbudsavisen-tjek)).
 - **Vigo-levering er lukket.** REMAs eget kampagnebanner i API'et (`GET v1/campaigns`)
   siger "Vigo lukker pr. 1. december 2025", og appens feature-flag for Vigo er slået fra.
   Ordre- og leveringskaldene i [Butikker og levering](docs/api/butikker-og-levering.md) er
-  derfor beskrevet, som de står i appens kode, men er efter alt at dømme ude af drift.
+  derfor beskrevet, som de står i appens kode, men er efter alt at dømme ude af drift, og
+  klienten har ingen metoder til dem.
 - **`@PATCH`, ikke `PUT`:** de opdaterende kald i appen er PATCH.
 
 ## Oversigt
@@ -63,6 +68,9 @@ Værd at vide fra kortlægningen:
 | GET | `v1/catalog/store/{store_id}/last_modified` | nej | Hvornår kataloget sidst blev ændret |
 | GET | `v1/shoppinglistsuggestions` | nej | Søgeforslag til indkøbslisten |
 | GET | `v1/settings` | nej | Appens globale indstillinger |
+| GET | `search/products?query=…` | nej | Varesøgning |
+| GET | `v3/products?filter[is_advertised]=true` | nej | Ugens avisvarer |
+| GET | `squid-api.tjek.com/v2/catalogs?dealer_id=…` | nøgle | Aktuelle tilbudsaviser (Tjek) |
 
 `store_id` har været `1` i alt, hvad vi har set.
 
@@ -81,7 +89,9 @@ Et beskyttet kald uden gyldigt adgangsbevis svarer `401`:
 ```
 
 `v1/sync/shoppinglists-v2` kan også melde fejl i kroppen med `error_code` og
-`error_message`, så tjek kroppen og ikke kun statuskoden.
+`error_message`, så tjek kroppen og ikke kun statuskoden. En ændring på en liste, kontoen
+ikke ejer, giver slet ingen fejl: svaret er `200` uden `error_code`, og listerne er
+uændrede. Sammenlign derfor svaret med det, du bad om.
 
 ## Login
 
@@ -232,8 +242,8 @@ POST v1/sync/shoppinglists-v2
 
 Kroppen er en række ændringer, én pr. liste. Listen udpeges med `id` og `name`, og
 `items` indeholder ændringerne på dens punkter. Flere lister og flere punkter kan sendes
-i samme kald. Svaret er de opdaterede lister i samme form som ved læsning
-(`{"response": [...]}`).
+i samme kald. Svaret er altid `200` med **alle** kontoens lister efter ændringen i
+`response`, i samme form som ved læsning, plus `wait` (60000), `unixtime` og `settings`.
 
 Ny vare — `offlineId` er en UUID, klienten selv finder på:
 
@@ -290,6 +300,47 @@ Fjern et punkt:
   ]
 }
 ```
+
+Et nyt punkt får et `id` i svaret; `amount` kommer tilbage som streng (`"1"`), `unit` som
+`""`, og `total_price` er udfyldt.
+
+### Opret, omdøb og slet en liste
+
+Der er ingen særskilte kald til lister: det er ændringer i samme synk-kald. Alle tre er
+afprøvet med login 3. oktober 2026.
+
+Opret — uden `id`, med en `offlineId` (UUID), klienten selv finder på. Ændringen må gerne
+have `items` med i samme kald:
+
+```json
+{ "changes": [ { "offlineId": "00000000-0000-4000-8000-000000000001", "name": "Min liste" } ] }
+```
+
+Den nye liste kommer tilbage med et `id` fra serveren, en delekode `code` på 8 tegn,
+`active: true`, `primary: false`, `approved: false`, `bags: 1`, `warning: null`,
+`items: []` og `members` med kun opretteren (`is_self: true`; et medlem har nøglerne
+`approved`, `email`, `id`, `is_self`, `name`, `photo`). `offlineId` står på listen (og på
+nye punkter) i svaret på netop det kald, så den nye liste kan findes ved at sammenligne
+`offlineId`. `polling` returnerer aldrig `offlineId`.
+
+Omdøb — `id`, `code`, punkter og medlemmer er uændrede bagefter:
+
+```json
+{ "changes": [ { "id": 1001, "name": "Nyt navn" } ] }
+```
+
+Slet — `name` kan udelades:
+
+```json
+{ "changes": [ { "id": 1001, "deleted": true } ] }
+```
+
+Listen forsvinder helt og med det samme, med alle sine punkter, både fra svaret og fra
+`polling`. Der er ingen "slettet"-markering bagefter: `polling?unixtime=<før sletningen>`
+svarede `response: null`.
+
+Ikke afprøvet: `PATCH v2/shoppinglists/{id}` (primær liste), `POST v1/shoppinglist/{id}/invite`,
+sletning af en delt eller primær liste, samme `offlineId` sendt to gange og regler for navnet.
 
 ## Favoritter
 
@@ -438,3 +489,32 @@ lignende.
   "status_text": ""
 }
 ```
+
+### Varesøgning og ugens tilbud
+
+```
+GET search/products?query=letmælk&per_page=20&page=1
+GET v3/products?filter[is_advertised]=true&include=department&per_page=100&page=1
+```
+
+Begge svarer med `{"data": [vare, …], "meta": {"pagination": {…}}}`. Varens felter og de
+øvrige åbne kald (afdelinger, stregkoder, butikker, opskrifter, adresseopslag) står i
+[Indkøb og varer](docs/api/indkoeb-og-varer.md) og
+[Butikker og levering](docs/api/butikker-og-levering.md).
+
+## Tilbudsavisen (Tjek)
+
+Den ugentlige avis ligger hos Tjek (tidligere eTilbudsavis), ikke hos REMA. Appen sender en
+API-nøgle i headeren `x-api-key`; nøglen og REMAs forhandler-id hos Tjek står som
+konstanter i `rema1000.py` (`TJEK_API_KEY`, `TJEK_DEALER_ID`). Afprøvet 3. oktober 2026:
+
+```
+GET https://squid-api.tjek.com/v2/catalogs?dealer_id=<forhandler-id>
+GET https://squid-api.tjek.com/v2/catalogs/<avis-id>/pages
+GET https://squid-api.tjek.com/v2/offers?catalog_id=<avis-id>&limit=100
+GET https://squid-api.tjek.com/v2/offers/<tilbuds-id>
+```
+
+Det første kald gav fire aviser (ugens avis, sidste uges, et indstik og en sæsonavis) med
+`id`, `label`, `run_from`, `run_till`, `page_count` og `offer_count`. Detaljerne står i
+[Indkøb og varer](docs/api/indkoeb-og-varer.md#tilbudsavisen-tjek).

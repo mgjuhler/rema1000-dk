@@ -814,7 +814,7 @@ class Rema1000:
         return self._tjek("GET", f"/v2/catalogs/{quote(str(catalog_id), safe='')}/pages")
 
     def newspaper_offers(self, catalog_id: str, limit: int = 100, offset: int = 0) -> list[dict]:
-        """The offers printed in a newspaper (at most 100 per call). [Verified: not used by the app]"""
+        """The offers printed in a newspaper, `limit` at a time. [Verified: not used by the app]"""
         return self._tjek("GET", "/v2/offers", params={"catalog_id": catalog_id, "limit": limit, "offset": offset})
 
     def newspaper_offer(self, offer_id: str) -> dict:
@@ -1330,7 +1330,7 @@ def build_parser() -> argparse.ArgumentParser:
     group.add_argument("--offers", metavar="AVIS_ID", help="tilbuddene i avisen")
     group.add_argument("--offer", metavar="TILBUDS_ID", help="ét tilbud som JSON")
     group.add_argument("--url", metavar="AVIS_ID", help="link til at bladre i avisen i en browser")
-    p.add_argument("--limit", type=int, default=100, metavar="N", help="antal tilbud ved --offers (højst 100)")
+    p.add_argument("--limit", type=int, default=100, metavar="N", help="antal tilbud ved --offers (standard: 100)")
     p.add_argument("--offset", type=int, default=0, metavar="N", help="spring de første N tilbud over ved --offers")
     p.add_argument("--json", action="store_true", help="skriv Tjeks svar som JSON")
     p.set_defaults(func=_cmd_newspaper)
