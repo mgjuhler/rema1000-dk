@@ -9,6 +9,12 @@ alt kan ændre sig uden varsel.
 - Adresseopslag ligger på en separat host: `https://dawa-proxy.digital.rema1000.dk/`
 - Alle stier herunder er relative til basis-URL'en, medmindre andet står.
 
+> **Vigo-levering er lukket.** REMAs eget kampagnebanner i API'et (`GET v1/campaigns`) siger
+> "Vigo lukker pr. 1. december 2025", og appens feature-flag for Vigo er slået fra. Alt om
+> bestilling, levering, indkøbere ("shoppere"), kørebog og udbetaling herunder er beskrevet,
+> som det står i appens kode, men er efter alt at dømme ude af drift. Butikker, åbningstider,
+> adresseopslag og Scan Selv hører ikke under Vigo.
+
 ## Statusmarkører
 
 | Markør | Betydning |

@@ -38,8 +38,10 @@ Værd at vide fra kortlægningen:
   ugens tilbudsvarer.
 - **Lister oprettes, omdøbes og slettes** gennem samme synk-kald som varerne
   (set i appens kode, ikke afprøvet).
-- **Levering med Vigo er slået fra** i appens feature-flag, så en stor del af ordre- og
-  leveringskaldene er sandsynligvis ude af drift.
+- **Vigo-levering er lukket.** REMAs eget kampagnebanner i API'et (`GET v1/campaigns`)
+  siger "Vigo lukker pr. 1. december 2025", og appens feature-flag for Vigo er slået fra.
+  Ordre- og leveringskaldene i [Butikker og levering](docs/api/butikker-og-levering.md) er
+  derfor beskrevet, som de står i appens kode, men er efter alt at dømme ude af drift.
 - **`@PATCH`, ikke `PUT`:** de opdaterende kald i appen er PATCH.
 
 ## Oversigt
