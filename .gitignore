@@ -1,0 +1,29 @@
+# Tokens and other secrets: never commit these
+tokens.json
+tokens.json.tmp
+*.tokens.json
+.env
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Caches and build output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Downloaded catalogue dumps
+catalog*.json
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
