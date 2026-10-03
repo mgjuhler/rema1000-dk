@@ -267,14 +267,405 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(rema1000.search_products(products, "nothing"), [])
 
 
+A = rema1000.API
+C = rema1000.CONTENT_API
+T = rema1000.TJEK_API
+U = A + "v3/users/42"
+
+# One row per method that makes exactly one call:
+# (method name, positional args, keyword args, HTTP method, URL, the request kwargs that matter, sends the token).
+# docs/api/metoder.md is generated from this table (see method_rows below).
+CALLS = [
+    # Account and profile
+    ("logout", (), {"confirm": True}, "POST", A + "v1/oauth/logout",
+     {"json": {"device_token": None, "push_id": -1}}, True),
+    ("user", (), {}, "GET", A + "v1/user", {}, True),
+    ("update_user", (), {"name": "Test Testesen"}, "POST", A + "v1/user", {"json": {"name": "Test Testesen"}}, True),
+    ("set_user_photo", (b"\xff\xd8",), {}, "POST", A + "v1/user/photo", {"json": {"photo": "/9g="}}, True),
+    ("delete_account", (), {"confirm": True}, "POST", A + "v1/user/delete", {}, True),
+    ("gdpr_export", (), {}, "POST", A + "v1/user/gdpr-export", {}, True),
+    ("find_friends_by_email", (["a@example.invalid", "b@example.invalid"],), {}, "POST", A + "v1/user/friends/emails",
+     {"data": [("emails[]", "a@example.invalid"), ("emails[]", "b@example.invalid")]}, True),
+    ("find_friends_by_number", (["00000000"],), {}, "POST", A + "v1/user/friends/numbers",
+     {"data": [("numbers[]", "00000000")]}, True),
+    ("user_details", (), {}, "GET", U,
+     {"params": {"include": "sponsor-club,active_bank_account,pending_shopper_suspension,type"}}, True),
+    ("update_user_details", (), {"is_favorite_notification_enabled": False}, "PATCH", U,
+     {"json": {"is_favorite_notification_enabled": False}}, True),
+    ("identity_token", (), {}, "GET", A + "identity-verification/token", {"params": {
+        "redirect_uri": "dk.rema1000.vigo://apps/rema1000/user/identity/verified",
+        "failed_uri": "dk.rema1000.vigo://apps/rema1000/user/identity/failed",
+        "cancelled_uri": "dk.rema1000.vigo://apps/rema1000/user/identity/cancelled",
+        "resume_uri": "https://shop.rema1000.dk/apps/rema1000/user/resume"}}, True),
+    ("add_address", ("00000000-0000-0000-0000-000000000000", "2nd floor"), {}, "POST", U + "/addresses",
+     {"json": {"dawa_address_id": "00000000-0000-0000-0000-000000000000", "description": "2nd floor",
+               "is_primary": False}}, True),
+    ("update_address", (7,), {"description": "Back door"}, "PATCH", U + "/addresses/7",
+     {"data": {"description": "Back door"}}, True),
+    ("delete_address", (7,), {}, "DELETE", U + "/addresses/7", {}, True),
+    ("policies", (), {}, "GET", A + "v3/policies", {"params": {"include": "current_version", "per_page": 100}}, False),
+    ("accept_policy", (4,), {}, "POST", U + "/policy-versions", {"json": {"policy_version_id": 4}}, True),
+    ("revoke_policy", (4,), {"confirm": True}, "DELETE", U + "/policy-versions/4", {}, True),
+    ("newsletters", (), {}, "GET", A + "v3/newsletters", {"params": {"per_page": 100}}, False),
+    ("newsletter_subscriptions", (), {}, "GET", U + "/newsletter-subscriptions", {"params": {"per_page": 100}}, True),
+    ("subscribe_newsletter", (5,), {}, "POST", U + "/newsletter-subscriptions", {"json": {"newsletter_id": 5}}, True),
+    ("unsubscribe_newsletter", (9,), {}, "DELETE", U + "/newsletter-subscriptions/9", {}, True),
+    ("register_push", ("fake-push-token",), {}, "POST", A + "v1/push/register", {"json": {
+        "service": "fcm", "app_identifier": "dk.iroots.rema1000", "app_version": "6.9.0",
+        "token": "fake-push-token", "language": "da"}}, True),
+    ("settings", (), {}, "GET", A + "v1/settings", {}, False),
+    ("feature_flags", (), {}, "GET", A + "v3/feature-flags", {"params": {"per_page": 1000}}, False),
+    ("campaigns", (), {}, "GET", A + "v1/campaigns", {}, False),
+    ("user_campaigns", (), {}, "GET", A + "v1/user/campaigns", {}, True),
+    ("batch", ([{"method": "POST", "uri": "/api/v3/users/42/favorites", "parameters": {"product_id": "11111"}}],), {},
+     "POST", A + "v3/batch", {"json": {"requests": [
+         {"method": "POST", "uri": "/api/v3/users/42/favorites", "parameters": {"product_id": "11111"}}]}}, True),
+    # Shopping lists
+    ("poll_lists", (1700000000,), {}, "GET", A + "v1/shoppinglists/polling", {"params": {"unixtime": 1700000000}}, True),
+    ("lists", (), {}, "GET", A + "v1/shoppinglists/polling", {"params": {"unixtime": 0}}, True),
+    ("sync", ([{"id": 1001, "name": "Example list", "items": []}],), {}, "POST", A + "v1/sync/shoppinglists-v2",
+     {"json": {"changes": [{"id": 1001, "name": "Example list", "items": []}]}}, True),
+    ("set_amount", (1001, "Example list", 900001, 3), {}, "POST", A + "v1/sync/shoppinglists-v2",
+     {"json": {"changes": [{"id": 1001, "name": "Example list", "items": [
+         {"id": 900001, "source": "android_search", "amount": 3}]}]}}, True),
+    ("remove_item", (1001, "Example list", 900001), {}, "POST", A + "v1/sync/shoppinglists-v2",
+     {"json": {"changes": [{"id": 1001, "name": "Example list", "items": [
+         {"id": 900001, "source": "android_search", "deleted": True}]}]}}, True),
+    ("set_bought", (1001, "Example list", 900001), {}, "POST", A + "v1/sync/shoppinglists-v2",
+     {"json": {"changes": [{"id": 1001, "name": "Example list", "items": [
+         {"id": 900001, "source": "android_search", "bought": True}]}]}}, True),
+    ("set_primary_list", (1001,), {}, "PATCH", A + "v2/shoppinglists/1001", {"json": {"primary": True}}, True),
+    ("invite_to_list", (1001, ["a@example.invalid"]), {}, "POST", A + "v1/shoppinglist/1001/invite",
+     {"data": [("emails[]", "a@example.invalid")]}, True),
+    ("list_recommended_products", (1001,), {}, "GET", A + "v3/shopping-lists/1001/recommended-products",
+     {"params": {"per_page": 20, "page": 1}}, True),
+    ("list_suggestions", (), {}, "GET", A + "v1/shoppinglistsuggestions", {}, False),
+    # Favourites and personal suggestions
+    ("favorites", (), {}, "GET", A + "v1/favorites/1", {}, True),
+    ("add_favorite", (11111,), {}, "POST", U + "/favorites", {"params": {"product_id": 11111}}, True),
+    ("add_favorites", ([11111, 22222],), {}, "POST", A + "v3/batch", {"json": {"requests": [
+        {"method": "POST", "uri": "/api/v3/users/42/favorites", "parameters": {"product_id": "11111"}},
+        {"method": "POST", "uri": "/api/v3/users/42/favorites", "parameters": {"product_id": "22222"}}]}}, True),
+    ("remove_favorite", (11111,), {}, "DELETE", A + "v1/favorites/1/11111", {}, True),
+    ("favorite_suggestions", (), {}, "GET", U + "/favorite-suggestions", {"params": {"per_page": 50, "page": 1}}, True),
+    ("dismiss_favorite_suggestion", (11111,), {}, "DELETE", U + "/favorite-suggestions/11111", {}, True),
+    ("frequently_bought", (), {}, "GET", U + "/frequently-bought-products",
+     {"params": {"per_page": 20, "page": 1}}, True),
+    ("inspiration_products", (), {}, "GET", U + "/inspiration-products", {"params": {"per_page": 20, "page": 1}}, True),
+    ("dismiss_inspiration_product", (11111,), {}, "DELETE", U + "/inspiration-products/11111", {}, True),
+    # Products, search and catalogue
+    ("catalog", (), {}, "GET", A + "v1/catalog/store/1/withchildren", {}, False),
+    ("catalog_modified", (), {}, "GET", A + "v1/catalog/store/1/last_modified", {}, False),
+    ("products", (), {"sort": "-popularity", "age_restricted": False}, "GET", A + "v3/products",
+     {"params": {"per_page": 20, "page": 1, "sort": "-popularity", "filter[age_restricted]": "false"}}, False),
+    ("offers", (), {}, "GET", A + "v3/products",
+     {"params": {"per_page": 100, "page": 1, "include": "department", "filter[is_advertised]": "true"}}, False),
+    ("all_offers", (), {}, "GET", A + "v3/products",
+     {"params": {"filter[is_advertised]": "true", "include": "department", "per_page": 100, "page": 1}}, False),
+    ("product", (11111,), {}, "GET", A + "v3/products/11111", {}, False),
+    ("departments", (), {}, "GET", A + "v3/departments",
+     {"params": {"per_page": 100, "page": 1, "include": "categories"}}, False),
+    ("category_products", (10, 1010), {}, "GET", A + "v3/departments/10/categories/1010/products",
+     {"params": {"per_page": 100, "page": 1}}, False),
+    ("barcode", ("5700000000000",), {}, "GET", A + "v3/product-barcode/5700000000000", {"params": {}}, False),
+    ("search", ("milk",), {}, "GET", A + "search/products",
+     {"params": {"query": "milk", "per_page": 20, "page": 1}}, False),
+    # The weekly newspaper (Tjek)
+    ("newspapers", (), {}, "GET", T + "/v2/catalogs", {"params": {"dealer_id": "11deC"}}, False),
+    ("newspaper_pages", ("abc123",), {}, "GET", T + "/v2/catalogs/abc123/pages", {}, False),
+    ("newspaper_offers", ("abc123",), {}, "GET", T + "/v2/offers",
+     {"params": {"catalog_id": "abc123", "limit": 100, "offset": 0}}, False),
+    ("newspaper_offer", ("offer1",), {}, "GET", T + "/v2/offers/offer1", {}, False),
+    ("newspaper_offer_products", ("offer1",), {}, "POST", T + "/v4/rpc/get_offer_products",
+     {"json": {"id": "offer1"}}, False),
+    # Front page content and recipes
+    ("entities", ("recipeTag",), {}, "GET", C + "entities",
+     {"params": {"filter[type]": "recipeTag", "per_page": 20, "page": 1}}, False),
+    ("app_configuration", (), {}, "GET", C + "entities",
+     {"params": {"filter[type]": "appConfiguration", "per_page": 1, "page": 1}}, False),
+    ("recipes", (), {"tag_id": "tag1", "sort": "title"}, "GET", C + "entities", {"params": {
+        "filter[type]": "recipe", "filter[tags.sys.id]": "tag1", "per_page": 20, "page": 1, "sort": "title"}}, False),
+    ("recipe", ("example-recipe",), {}, "GET", C + "entities", {"params": {
+        "filter[type]": "recipe", "filter[slug]": "example-recipe", "per_page": 1, "page": 1}}, False),
+    ("recipe_tags", (), {}, "GET", C + "entities",
+     {"params": {"filter[type]": "recipeTag", "per_page": 100, "page": 1}}, False),
+    ("featured_recipes", ("group1",), {}, "GET", C + "featured-recipes",
+     {"params": {"filter[group_id]": "group1"}}, False),
+    ("search_recipes", ("soup",), {}, "GET", A + "search/recipes",
+     {"params": {"query": "soup", "per_page": 20, "page": 1}}, False),
+    ("favorite_recipes", (), {}, "GET", U + "/favorite-recipes",
+     {"params": {"fields": "id", "per_page": 100, "page": 1}}, True),
+    ("add_favorite_recipe", ("recipe1",), {}, "POST", U + "/favorite-recipes", {"json": {"recipe_id": "recipe1"}}, True),
+    ("remove_favorite_recipe", ("recipe1",), {}, "DELETE", U + "/favorite-recipes/recipe1", {}, True),
+    # Stores and addresses
+    ("stores", (), {}, "GET", A + "v3/stores", {"params": {"per_page": 1000, "page": 1}}, False),
+    ("stores_near", (55.0, 10.0), {"click_and_collect": True}, "GET", A + "v3/stores", {"params": {
+        "filter[near_coordinates]": "55.0,10.0", "filter[is_click_and_collect_active]": "true", "per_page": 3}}, False),
+    ("address_autocomplete", ("Eksempelvej 1",), {}, "GET", rema1000.ADDRESS_API + "autocomplete", {"params": {
+        "q": "Eksempelvej 1", "caretpos": 13, "multilinje": "true", "type": "adresse", "fuzzy": "true",
+        "side": 1, "per_side": 20}}, False),
+]
+
+# Public methods that are covered by their own tests instead of a CALLS row,
+# with the calls they make (for the generated overview).
+OTHER_METHODS = {
+    "login": [("GET", "oauth2/authorize")],
+    "exchange_code": [("POST", "oauth2/token")],
+    "access_token": [("POST", "oauth2/token/refresh")],
+    "create_list": [("POST", "v1/sync/shoppinglists-v2")],
+    "rename_list": [("POST", "v1/sync/shoppinglists-v2")],
+    "delete_list": [("GET", "v1/shoppinglists/polling"), ("POST", "v1/sync/shoppinglists-v2")],
+    "add_item": [("POST", "v1/sync/shoppinglists-v2")],
+    "identity_login_url": [("GET", "identity-verification/login")],
+    "newspaper_viewer_url": [("GET", "publication-viewer.tjek.com/v1/embeds/{publication_id}")],
+    "request": [], "pages": [], "save_tokens": [], "load_tokens": [], "find_list": [], "user_id": [],
+}
+
+STATUS_TAG = rema1000.re.compile(r"\[(Verified|From app code|Helper)(: [^\]]+)?\]$")
+
+
+def public_methods():
+    return sorted(name for name, value in vars(rema1000.Rema1000).items()
+                  if callable(value) and not name.startswith("_"))
+
+
+def status_of(name):
+    """The status tag at the end of the first docstring paragraph: (tag, note)."""
+    summary = (getattr(rema1000.Rema1000, name).__doc__ or "").strip().split("\n\n")[0]
+    match = STATUS_TAG.search(" ".join(summary.split()))
+    return (match.group(1), (match.group(2) or "")[2:]) if match else (None, "")
+
+
+def method_rows():
+    """(client method, HTTP method, path, status, note) for every public method that calls something."""
+    rows = []
+    for name, _, _, verb, url, _, _ in CALLS:
+        path = url.replace(A, "").replace("https://", "") if not url.startswith(A) else url[len(A):]
+        rows.append((name, verb, path.replace("/42", "/{user_id}"), *status_of(name)))
+    for name, calls in OTHER_METHODS.items():
+        rows += [(name, verb, path, *status_of(name)) for verb, path in calls]
+    return rows
+
+
+class EveryMethodTest(ClientCase):
+    def setUp(self):
+        super().setUp()
+        self.write_tokens()
+        self.client._user_id = 42
+
+    def test_each_call_builds_the_expected_request(self):
+        for name, args, kwargs, verb, url, expected, sends_token in CALLS:
+            with self.subTest(method=name):
+                self.session.request.reset_mock()
+                self.session.request.return_value = response(body={})
+                getattr(self.client, name)(*args, **kwargs)
+                self.assertEqual(self.session.request.call_count, 1)
+                call_args, call_kwargs = self.session.request.call_args
+                self.assertEqual(call_args, (verb, url))
+                for key in ("params", "json", "data", "files"):
+                    self.assertEqual(call_kwargs.get(key), expected.get(key), key)
+                headers = call_kwargs["headers"]
+                self.assertEqual(headers.get("Authorization"), "Bearer old-access" if sends_token else None)
+                self.assertEqual(headers.get("x-api-key"), rema1000.TJEK_API_KEY if url.startswith(T) else None)
+
+    def test_every_public_method_is_exercised(self):
+        covered = {row[0] for row in CALLS} | set(OTHER_METHODS)
+        self.assertEqual(sorted(covered), public_methods())
+
+    def test_every_public_method_carries_a_status_tag(self):
+        for name in public_methods():
+            with self.subTest(method=name):
+                self.assertIsNotNone(status_of(name)[0])
+
+    def test_the_method_overview_lists_every_method(self):
+        overview = (Path(rema1000.__file__).parent / "docs" / "api" / "metoder.md").read_text(encoding="utf-8")
+        for name in public_methods():
+            with self.subTest(method=name):
+                self.assertIn(f"`{name}`", overview)
+        status = {"Verified": "Afprøvet", "From app code": "Set i appens kode"}
+        for name, verb, path, tag, _ in method_rows():
+            with self.subTest(row=name):
+                self.assertIn(f"| `{name}` | {verb} | `{path}` | {status[tag]}", overview)
+
+
+class ListManagementTest(ClientCase):
+    def setUp(self):
+        super().setUp()
+        self.write_tokens()
+
+    def change(self):
+        return self.session.request.call_args.kwargs["json"]["changes"][0]
+
+    def test_create_returns_the_list_that_echoes_the_offline_id(self):
+        def answer(method, url, **kwargs):
+            offline_id = kwargs["json"]["changes"][0]["offlineId"]
+            return response(body={"response": [{"id": 1001, "name": "Old list"},
+                                               {"id": 1002, "name": "New list", "offlineId": offline_id}]})
+        self.session.request.side_effect = answer
+        self.assertEqual(self.client.create_list("New list")["id"], 1002)
+        self.assertEqual(set(self.change()), {"offlineId", "name"})
+        self.assertEqual(len(self.change()["offlineId"]), 36)
+
+    def test_create_can_carry_items(self):
+        self.session.request.side_effect = lambda method, url, **kwargs: response(body={"response": [
+            {"id": 1002, "offlineId": kwargs["json"]["changes"][0]["offlineId"]}]})
+        item = rema1000.new_item("Example product", 11111)
+        self.client.create_list("New list", [item])
+        self.assertEqual(self.change()["items"], [item])
+
+    def test_create_without_an_echo_raises(self):
+        self.session.request.return_value = response(body={"response": [{"id": 1001, "name": "New list"}]})
+        with self.assertRaises(rema1000.RemaError):
+            self.client.create_list("New list")
+
+    def test_rename(self):
+        self.session.request.return_value = response(body={"response": [{"id": 1001, "name": "Renamed"}]})
+        self.assertEqual(self.client.rename_list(1001, "Renamed"), {"id": 1001, "name": "Renamed"})
+        self.assertEqual(self.change(), {"id": 1001, "name": "Renamed"})
+
+    def test_rename_that_is_silently_ignored_raises(self):
+        self.session.request.return_value = response(body={"response": [{"id": 1001, "name": "Mine"}]})
+        with self.assertRaises(rema1000.RemaError):
+            self.client.rename_list(2002, "Renamed")
+
+    def test_delete(self):
+        self.session.request.side_effect = [
+            response(body={"response": [{"id": 1001}, {"id": 1002}]}), response(body={"response": [{"id": 1002}]})]
+        self.assertEqual(self.client.delete_list(1001), [{"id": 1002}])
+        self.assertEqual(self.change(), {"id": 1001, "deleted": True})
+
+    def test_delete_of_an_unknown_list_sends_nothing(self):
+        self.session.request.return_value = response(body={"response": [{"id": 1001}]})
+        with self.assertRaises(rema1000.RemaError):
+            self.client.delete_list(2002)
+        self.assertEqual(self.session.request.call_count, 1)
+
+    def test_delete_that_did_not_happen_raises(self):
+        self.session.request.return_value = response(body={"response": [{"id": 1001}]})
+        with self.assertRaises(rema1000.RemaError):
+            self.client.delete_list(1001)
+
+    def test_add_item(self):
+        self.session.request.return_value = response(body={"response": []})
+        self.client.add_item(1001, "Example list", "Example product", 11111, amount=2)
+        item = self.change()["items"][0]
+        self.assertEqual((item["name"], item["store_item_id"], item["amount"]), ("Example product", 11111, 2))
+
+
+class GuardTest(ClientCase):
+    def setUp(self):
+        super().setUp()
+        self.write_tokens()
+        self.client._user_id = 42
+
+    def test_guarded_paths(self):
+        for verb, path in (("POST", "v1/user/delete"), ("post", "/api/v1/user/delete"), ("POST", "v1/oauth/logout"),
+                           ("POST", "v1/job"), ("POST", "v1/jobs/create-from-existing"), ("POST", "v1/job/5/cancel"),
+                           ("POST", A + "v3/jobs/5/payments?x=1"), ("DELETE", "v3/jobs/5/payments/6"),
+                           ("DELETE", "v3/users/42/policy-versions/4")):
+            self.assertTrue(rema1000.is_guarded(verb, path), path)
+        for verb, path in (("GET", "v1/user"), ("POST", "v1/user"), ("GET", "v3/jobs/5/payments"),
+                           ("POST", "v1/sync/shoppinglists-v2"), ("POST", T + "/v1/user/delete")):
+            self.assertFalse(rema1000.is_guarded(verb, path), path)
+
+    def test_guarded_methods_refuse_without_confirm(self):
+        for call in (self.client.delete_account, self.client.logout, lambda: self.client.revoke_policy(4),
+                     lambda: self.client.request("POST", "v1/job", json={}),
+                     lambda: self.client.batch([{"method": "POST", "uri": "/api/v1/user/delete"}])):
+            with self.assertRaises(rema1000.ConfirmationRequired):
+                call()
+        self.session.request.assert_not_called()
+
+    def test_token_is_not_sent_to_other_hosts(self):
+        with self.assertRaises(rema1000.RemaError):
+            self.client.request("GET", "https://example.invalid/v1/user")
+        self.session.request.assert_not_called()
+
+    def test_request_accepts_the_path_spellings(self):
+        self.session.request.return_value = response(body={})
+        for path in ("v1/user", "/v1/user", "/api/v1/user", A + "v1/user"):
+            self.client.request("GET", path)
+            self.assertEqual(self.session.request.call_args.args, ("GET", A + "v1/user"))
+
+    def test_check_false_returns_error_answers(self):
+        self.session.request.return_value = response(status=404, body={"message": "nope"})
+        self.assertEqual(self.client.request("GET", "v3/nothing", auth=False, check=False).status_code, 404)
+
+    def test_empty_answer_is_none(self):
+        empty = response()
+        empty.content = b""
+        self.session.request.return_value = empty
+        self.assertIsNone(self.client.delete_address(7))
+
+
+class UrlHelperTest(unittest.TestCase):
+    def test_identity_login_url(self):
+        client = rema1000.Rema1000(token_file="/nonexistent/tokens.json", session=mock.Mock())
+        self.assertEqual(client.identity_login_url("fake-token"),
+                         A + "identity-verification/login?token=fake-token&platform=android")
+
+    def test_newspaper_viewer_url(self):
+        client = rema1000.Rema1000(token_file="/nonexistent/tokens.json", session=mock.Mock())
+        parts = urlsplit(client.newspaper_viewer_url("abc123"))
+        self.assertEqual(f"{parts.scheme}://{parts.netloc}{parts.path}",
+                         "https://publication-viewer.tjek.com/v1/embeds/abc123")
+        self.assertEqual(parse_qs(parts.query), {
+            "enable_zoom": ["true"], "api_key": [rema1000.TJEK_API_KEY], "context": ["webview"],
+            "view_direction": ["horizontal"], "view_mode": ["paged"], "ui": ["regular"]})
+
+    def test_current_price(self):
+        self.assertEqual(rema1000.current_price({"prices": [{"price": 10.0}, {"price": 12.0}]}), {"price": 10.0})
+        self.assertEqual(rema1000.current_price({}), {})
+
+
+class PagesTest(ClientCase):
+    def test_pages_follow_last_page_and_stop_at_max(self):
+        self.session.request.side_effect = [
+            response(body={"data": [1, 2], "meta": {"pagination": {"last_page": 3}}}),
+            response(body={"data": [3], "meta": {"pagination": {"last_page": 3}}})]
+        self.assertEqual(self.client.pages("v3/products", {"sort": "title"}, auth=False, max_pages=2), [1, 2, 3])
+        self.assertEqual(self.session.request.call_args.kwargs["params"], {"sort": "title", "per_page": 100, "page": 2})
+
+
 class CliTest(unittest.TestCase):
     def test_parser_accepts_the_documented_commands(self):
         parser = rema1000.build_parser()
         for argv in (["login"], ["lists", "--json"], ["add", "1001", "123456", "--amount", "2"],
                      ["amount", "1001", "900001", "3"], ["remove", "1001", "900001"],
                      ["favorites"], ["favorites", "--add", "123456"], ["suggestions"],
-                     ["catalog", "--search", "milk"], ["--token-file", "x.json", "catalog", "--modified"]):
+                     ["catalog", "--search", "milk"], ["--token-file", "x.json", "catalog", "--modified"],
+                     ["search", "whole", "milk", "--per-page", "5"], ["offers", "--all"], ["product", "11111"],
+                     ["barcode", "5700000000000"], ["departments", "--json"], ["stores", "--near", "55.0,10.0"],
+                     ["stores", "--search", "example", "--collect"], ["newspaper"], ["newspaper", "--offers", "abc123"],
+                     ["recipes", "--search", "soup"], ["recipes", "--tags"], ["user"], ["logout", "--yes"],
+                     ["list-create", "New list"], ["list-rename", "1001", "Renamed"], ["list-delete", "1001"],
+                     ["api", "GET", "v3/products", "--query", "per_page=1", "page=2", "--no-auth"],
+                     ["api", "POST", "v1/user", "--json", '{"name": "Test Testesen"}']):
             self.assertTrue(callable(parser.parse_args(argv).func))
+
+    def run_api(self, *argv, status=200):
+        session = mock.Mock()
+        session.request.return_value = response(status=status, body={"ok": True})
+        client = rema1000.Rema1000(token_file="/nonexistent/tokens.json", session=session)
+        args = rema1000.build_parser().parse_args(["api", *argv])
+        with mock.patch("builtins.print"):
+            return args.func(client, args), session
+
+    def test_api_command_builds_the_request(self):
+        code, session = self.run_api("get", "v3/products", "--query", "filter[is_advertised]=true", "per_page=1",
+                                     "--no-auth")
+        self.assertEqual(code, 0)
+        self.assertEqual(session.request.call_args.args, ("GET", A + "v3/products"))
+        self.assertEqual(session.request.call_args.kwargs["params"],
+                         [("filter[is_advertised]", "true"), ("per_page", "1")])
+        self.assertNotIn("Authorization", session.request.call_args.kwargs["headers"])
+
+    def test_api_command_reports_errors_and_guards(self):
+        self.assertEqual(self.run_api("GET", "v3/nothing", "--no-auth", status=404)[0], 1)
+        code, session = self.run_api("POST", "v1/user/delete", "--no-auth")
+        self.assertEqual(code, 2)
+        session.request.assert_not_called()
+        self.assertEqual(self.run_api("GET", "v1/user", "--no-auth", "--json", "{broken")[0], 2)
 
 
 if __name__ == "__main__":
