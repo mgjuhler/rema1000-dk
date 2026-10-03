@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="docs/banner.png" alt="rema1000-dk — uofficiel Python-klient til den danske REMA 1000-app" width="800" />
+
+</div>
+
 # rema1000-dk
 
 Uofficiel Python-klient og API-noter til backenden bag den **danske** REMA 1000-app
@@ -154,6 +160,14 @@ python -m unittest discover -s tests -v
 - `GET v3/users/{user_id}/frequently-bought-products` svarede 403 for vores konto og er
   derfor ikke med i klienten.
 - Oprettelse, omdøbning og deling af lister er ikke undersøgt.
+
+## Tak til
+
+[Alfredvc](https://github.com/Alfredvc) for [rema1000-cli](https://github.com/Alfredvc/rema1000-cli),
+som gør det samme for den **norske** REMA-app. Det var hans projekt, der viste, at appens
+API lader sig kortlægge og bruge fra en kommandolinje, og det er forbilledet for både idéen
+og banneret øverst. Koden her er skrevet fra bunden mod den danske backend, som er en helt
+anden end den norske.
 
 ## Licens
 

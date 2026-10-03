@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" font-family="'DejaVu Sans', 'Liberation Sans', 'Segoe UI', Arial, sans-serif">
+  <defs>
+    <radialGradient id="bg" cx="68%" cy="42%" r="85%">
+      <stop offset="0" stop-color="#16306b"/><stop offset=".45" stop-color="#0a1736"/><stop offset="1" stop-color="#050a1a"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c1a3d" stop-opacity=".95"/><stop offset="1" stop-color="#081128" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd98a"/><stop offset="1" stop-color="#f29a3c"/>
+    </linearGradient>
+    <filter id="glowRed" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#3b82f6" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect width="1280" height="720" fill="url(#grid)"/>
+
+  <!-- Circuit traces and stars -->
+  <g fill="none" stroke="#3b82f6" stroke-opacity=".35" stroke-width="1.5">
+    <path d="M0 96h70l18 18h60"/><path d="M0 610h120l16-16h40"/><path d="M1280 560h-90l-14 14h-50"/>
+    <path d="M1280 190h-60l-12-12h-36"/><path d="M560 60h60l10 10h50"/>
+  </g>
+  <g fill="#93c5fd">
+    <circle cx="148" cy="114" r="3"/><circle cx="176" cy="594" r="3"/><circle cx="1126" cy="574" r="3"/><circle cx="1172" cy="178" r="3"/><circle cx="680" cy="70" r="3"/>
+    <circle cx="420" cy="40" r="1.5" opacity=".7"/><circle cx="760" cy="120" r="1.5" opacity=".6"/><circle cx="1010" cy="60" r="1.5" opacity=".7"/>
+    <circle cx="610" cy="640" r="1.5" opacity=".5"/><circle cx="300" cy="680" r="1.5" opacity=".6"/><circle cx="940" cy="668" r="1.5" opacity=".6"/>
+  </g>
+
+  <!-- Title -->
+  <g filter="url(#glowRed)">
+    <text x="64" y="128" font-size="88" font-weight="700" letter-spacing="-3" fill="#1d4ed8" stroke="#ff4d5a" stroke-width="3" paint-order="stroke">rema1000-dk</text>
+  </g>
+  <text x="68" y="176" font-size="26" fill="#e2e8f0">Uofficiel Python-klient til den danske REMA 1000-app.</text>
+  <text x="68" y="208" font-size="21" fill="#93a4c4">Indkøbslister · favoritter · varekatalog</text>
+
+  <!-- Feature chips, top right -->
+  <g font-size="19" font-weight="700" fill="#bfdbfe" text-anchor="middle">
+    <g fill="#0c1a3d" stroke="#3b82f6" stroke-opacity=".7" stroke-width="1.5">
+      <rect x="892" y="40" width="96" height="52" rx="12"/><rect x="1000" y="40" width="96" height="52" rx="12"/><rect x="1108" y="40" width="108" height="52" rx="12"/>
+    </g>
+    <text x="940" y="73">API</text><text x="1048" y="73">PKCE</text><text x="1162" y="73">JSON</text>
+  </g>
+
+  <!-- Terminal -->
+  <g filter="url(#glowBlue)">
+    <rect x="56" y="244" width="640" height="344" rx="18" fill="url(#panel)" stroke="#3b82f6" stroke-width="2"/>
+  </g>
+  <circle cx="84" cy="270" r="6" fill="#ff5f57"/><circle cx="104" cy="270" r="6" fill="#3b82f6"/><circle cx="124" cy="270" r="6" fill="#38bdf8"/>
+  <g font-family="'Cascadia Mono', 'Consolas', 'DejaVu Sans Mono', monospace" font-size="18.5">
+    <text x="82" y="318"><tspan fill="#94a3b8">$ </tspan><tspan fill="#e2e8f0">python rema1000.py </tspan><tspan fill="#86efac">login</tspan></text>
+    <text x="82" y="346" fill="#4ade80">  ✓ Logget ind</text>
+    <text x="82" y="388"><tspan fill="#94a3b8">$ </tspan><tspan fill="#e2e8f0">python rema1000.py </tspan><tspan fill="#86efac">catalog</tspan><tspan fill="#7dd3fc"> --search </tspan><tspan fill="#fde68a">"letmælk"</tspan></text>
+    <text x="82" y="416" fill="#cbd5e1">  20494  10.95 kr.  LETMÆLK 1,5% FEDT</text>
+    <text x="82" y="442" fill="#cbd5e1">  20500  12.50 kr.  LETMÆLK 1,5%</text>
+    <text x="82" y="484"><tspan fill="#94a3b8">$ </tspan><tspan fill="#e2e8f0">python rema1000.py </tspan><tspan fill="#86efac">add</tspan><tspan fill="#fde68a"> 1234567 20494</tspan><tspan fill="#7dd3fc"> --amount </tspan><tspan fill="#fde68a">2</tspan></text>
+    <text x="82" y="512" fill="#4ade80">  ✓ Lagt på listen</text>
+    <text x="82" y="554"><tspan fill="#94a3b8">$ </tspan><tspan fill="#e2e8f0">▍</tspan></text>
+  </g>
+
+  <!-- Shop front -->
+  <g>
+    <path d="M770 300 L1280 250 V600 H770 Z" fill="#0b1632"/>
+    <path d="M770 300 L1280 250 V286 L770 332 Z" fill="#13224a"/>
+    <g fill="url(#glass)" opacity=".92">
+      <path d="M800 352 L900 344 V560 H800 Z"/><path d="M912 343 L1012 335 V560 H912 Z"/><path d="M1024 334 L1124 326 V560 H1024 Z"/><path d="M1136 325 L1236 317 V560 H1136 Z"/>
+    </g>
+    <g stroke="#0b1632" stroke-width="5">
+      <path d="M850 348V560M962 339V560M1074 330V560M1186 321V560M800 450H1236"/>
+    </g>
+    <rect x="770" y="560" width="510" height="40" fill="#070d1f"/>
+    <g filter="url(#glowRed)">
+      <text x="800" y="312" font-size="38" font-weight="700" fill="#1d4ed8" stroke="#ff4d5a" stroke-width="2" paint-order="stroke" transform="rotate(-5.6 800 312)" letter-spacing="2">KØBMAND</text>
+    </g>
+  </g>
+
+  <!-- Shopping list card -->
+  <g filter="url(#glowBlue)">
+    <rect x="724" y="392" width="268" height="214" rx="16" fill="url(#panel)" stroke="#38bdf8" stroke-width="2"/>
+  </g>
+  <text x="746" y="428" font-size="20" font-weight="800" fill="#e0f2fe" letter-spacing="1">UGE 41</text>
+  <text x="972" y="428" font-size="16" fill="#7dd3fc" text-anchor="end">3 varer</text>
+  <path d="M746 442H972" stroke="#38bdf8" stroke-opacity=".4"/>
+  <g font-size="19" fill="#e2e8f0">
+    <g fill="none" stroke="#38bdf8" stroke-width="2"><rect x="746" y="458" width="20" height="20" rx="5"/><rect x="746" y="494" width="20" height="20" rx="5"/><rect x="746" y="530" width="20" height="20" rx="5"/></g>
+    <path d="M750 468l5 5 8-10M750 504l5 5 8-10" fill="none" stroke="#4ade80" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="780" y="475">2 × Letmælk</text><text x="972" y="475" text-anchor="end" fill="#93c5fd">21,90</text>
+    <text x="780" y="511">Rugbrød</text><text x="972" y="511" text-anchor="end" fill="#93c5fd">14,95</text>
+    <text x="780" y="547">Fryseposer</text><text x="972" y="547" text-anchor="end" fill="#93c5fd">13,95</text>
+  </g>
+  <text x="972" y="588" font-size="18" font-weight="800" fill="#e0f2fe" text-anchor="end">I alt 50,80 kr.</text>
+
+  <!-- The bear with a shopping basket -->
+  <g transform="translate(1150 470)">
+    <ellipse cx="0" cy="150" rx="120" ry="14" fill="none" stroke="#38bdf8" stroke-opacity=".7" stroke-width="2"/>
+    <ellipse cx="0" cy="150" rx="84" ry="9" fill="#38bdf8" opacity=".18"/>
+    <ellipse cx="0" cy="92" rx="62" ry="60" fill="#8b5a36"/>
+    <ellipse cx="0" cy="104" rx="38" ry="36" fill="#c9966b"/>
+    <ellipse cx="-34" cy="146" rx="22" ry="12" fill="#7a4d2c"/><ellipse cx="34" cy="146" rx="22" ry="12" fill="#7a4d2c"/>
+    <circle cx="-44" cy="-40" r="20" fill="#8b5a36"/><circle cx="-44" cy="-40" r="10" fill="#c9966b"/>
+    <circle cx="44" cy="-40" r="20" fill="#8b5a36"/><circle cx="44" cy="-40" r="10" fill="#c9966b"/>
+    <circle cx="0" cy="0" r="58" fill="#9a6640"/>
+    <ellipse cx="0" cy="18" rx="27" ry="20" fill="#d9b08c"/>
+    <ellipse cx="0" cy="9" rx="8.5" ry="6" fill="#2b1a10"/>
+    <path d="M0 15v7M0 22q-8 7-16 1M0 22q8 7 16 1" fill="none" stroke="#2b1a10" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="-21" cy="-10" r="6" fill="#2b1a10"/><circle cx="21" cy="-10" r="6" fill="#2b1a10"/>
+    <circle cx="-19" cy="-12" r="2" fill="#fff"/><circle cx="23" cy="-12" r="2" fill="#fff"/>
+    <circle cx="-36" cy="12" r="8" fill="#e9a38a" opacity=".5"/><circle cx="36" cy="12" r="8" fill="#e9a38a" opacity=".5"/>
+    <!-- arm and basket -->
+    <path d="M-52 70 Q-92 76 -104 96" fill="none" stroke="#8b5a36" stroke-width="20" stroke-linecap="round"/>
+    <path d="M52 70 Q78 84 70 112" fill="none" stroke="#8b5a36" stroke-width="20" stroke-linecap="round"/>
+    <g transform="translate(-150 92)">
+      <path d="M10 0 Q40 -34 70 0" fill="none" stroke="#ff4d5a" stroke-width="5" stroke-linecap="round"/>
+      <path d="M0 0H80L70 46H10Z" fill="#1d4ed8" stroke="#93c5fd" stroke-width="2"/>
+      <path d="M8 14H72M12 30H68M26 2L30 44M40 2V44M54 2L50 44" stroke="#93c5fd" stroke-opacity=".7" stroke-width="1.6" fill="none"/>
+      <rect x="20" y="-16" width="16" height="22" rx="3" fill="#f8fafc"/><rect x="22" y="-10" width="12" height="6" fill="#38bdf8"/>
+      <circle cx="54" cy="-6" r="10" fill="#ef4444"/><path d="M54 -16q4 -6 9 -5" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Bottom bar -->
+  <path d="M56 628H1224" stroke="#3b82f6" stroke-opacity=".5"/>
+  <g font-size="16" font-weight="700" fill="#cbd5e1" letter-spacing="1.2">
+    <text x="64" y="667">ÉN FIL · PYTHON</text>
+    <text x="296" y="667">TOKEN FORNYES AUTOMATISK</text>
+    <text x="640" y="667">KUN DANMARK</text>
+  </g>
+  <g fill="#3b82f6" opacity=".7"><rect x="272" y="650" width="2" height="24"/><rect x="616" y="650" width="2" height="24"/></g>
+  <text x="1224" y="668" font-size="19" font-weight="700" text-anchor="end"><tspan fill="#38bdf8">github.com/</tspan><tspan fill="#ff6b76">mgjuhler/rema1000-dk</tspan></text>
+</svg>
